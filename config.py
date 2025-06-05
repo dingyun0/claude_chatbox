@@ -8,7 +8,8 @@ class Config:
     FROM_EMAIL=os.getenv("FROM_EMAIL")
     DEBUG=os.getenv("DEBUG")
     PORT=os.getenv("PORT")
-    
+    BASE_URL=os.getenv("BASE_URL")
+
     CLAUDE_MODEL='claude-3-sonnet-20240229'
     MAX_TOKENS=1000
     TEMPERATURE=0.7

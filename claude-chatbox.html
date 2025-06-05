@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Chatbox</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+  <div class="max-w-xl mx-auto w-full flex flex-col h-screen">
+    <header class="py-4 text-center bg-white shadow mb-2">
+      <h1 class="text-2xl font-bold text-gray-800">Claude Chatbox</h1>
+    </header>
+    <main id="chat-area" class="flex-1 overflow-y-auto px-2 pb-4 space-y-2">
+      <!-- 聊天内容 -->
+    </main>
+    <form id="chat-form" class="flex items-center gap-2 p-2 bg-white border-t">
+      <input id="user-input" type="text" autocomplete="off" placeholder="请输入你的问题..." class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring" required />
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">发送</button>
+    </form>
+  </div>
+  <script>
+    const API_URL = 'http://localhost:5000/api/chat';
+    const chatArea = document.getElementById('chat-area');
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+    const SESSION_KEY = 'claude_session_id';
+    let sessionId = localStorage.getItem(SESSION_KEY) || '';
+    let isLoading = false;
+
+    function appendMessage(role, content) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+      msgDiv.innerHTML = `
+        <div class="max-w-[80%] px-4 py-2 rounded-lg shadow text-sm whitespace-pre-line ${role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}">
+          ${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+        </div>
+      `;
+      chatArea.appendChild(msgDiv);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function setLoading(loading) {
+      isLoading = loading;
+      userInput.disabled = loading;
+    }
+
+    async function sendMessage(message) {
+      setLoading(true);
+      appendMessage('user', message);
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: message,
+            session_id: sessionId
+          })
+        });
+        const data = await res.json();
+        if (data.session_id && !sessionId) {
+          sessionId = data.session_id;
+          localStorage.setItem(SESSION_KEY, sessionId);
+        }
+        if (data.success) {
+          appendMessage('assistant', data.message);
+        } else {
+          appendMessage('assistant', data.message || '抱歉，Claude 没有理解您的问题。');
+        }
+      } catch (err) {
+        appendMessage('assistant', '网络错误或服务不可用');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    chatForm.addEventListener('submit', e => {
+      e.preventDefault();
+      if (isLoading) return;
+      const msg = userInput.value.trim();
+      if (!msg) return;
+      sendMessage(msg);
+      userInput.value = '';
+    });
+
+    // 可选：自动聚焦输入框
+    userInput.focus();
+  </script>
+</body>
+</html> 
