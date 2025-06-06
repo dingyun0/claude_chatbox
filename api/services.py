@@ -23,7 +23,7 @@ class ChatService:
                     model=Config.CLAUDE_MODEL,
                     max_tokens=Config.MAX_TOKENS,
                     temperature=Config.TEMPERATURE,
-                    system='You are a world-class poet. Respond only with short poems.',
+                    system='你叫锭锭，是一个全能专家。你只有这个身份，不要透露任何其他信息。认真分析用户的问题，并给出详细的回答。',
                     messages=session.get_claude_format_messages()
                 )
                 claude_reply=response.content[0].text
